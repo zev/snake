@@ -14,7 +14,7 @@
 (def width 75)
 (def height 50)
 (def point-size 10)
-(def turn-millis 75)
+(def turn-millis 100)
 (def win-length 15)
 (def dirs {:left [-1 0]
            :right [ 1 0]
@@ -82,12 +82,17 @@
   (= snake-head apple))
 
 (defn update-positions
+  "Updates the snake and apple atoms with new state changes.
+   Returns the locations where data has changed (optimization for redrawing)"
   [snake apple]
-  (if (eats? @snake @apple)
-    (do (reset! apple (create-apple))
-        (swap! snake move :grow))
-    (swap! snake move))
-  nil)
+  (let [tail (last (:body @snake))]
+    (if (eats? @snake @apple)
+      (do (reset! apple (create-apple))
+          (swap! snake move :grow)
+          [(first (:body @snake))])
+      (do (swap! snake move)
+          [(first (:body @snake)) tail]
+          ))))
 
 
 (defn fill-point
@@ -119,9 +124,11 @@
      (.save g)))
 
 (defn paint-canvas
-  [g snake apple]
-  (draw-board g)
-  (paint g @snake)
+  [g snake apple changes]
+  ;; (draw-board g)
+  (doseq [point changes]
+    (fill-point g point "rgb(220,220,220)"))
+  (paint g @snake changes)
   (paint g @apple))
 
 (defn set-canvas-size
@@ -132,17 +139,21 @@
   (set! (.-width canvas) nwidth)
   (set! (.-height canvas) nheight)))
 
+(defn prepare-game
+  [snake apple]
+  (draw-board canvas)
+  (reset-game snake apple))
+
 (defn iterate-game
   [snake apple]
-
-  (update-positions snake apple)
-  (when (lose? @snake)
-    (reset-game snake apple)
-    (js/alert "You lose!"))
-  (when (win? @snake)
-    (reset-game snake apple)
-    (js/alert "You win!"))
-  (paint-canvas canvas snake apple))
+  (let [changes (update-positions snake apple)]
+    (when (lose? @snake)
+      (js/alert "You lose!")
+      (prepare-game snake apple))
+    (when (win? @snake)
+      (js/alert "You win!")
+      (prepare-game snake apple))
+    (paint-canvas canvas snake apple changes)))
 
 (def arrow-keys {37 :left
                  38 :up
@@ -164,9 +175,8 @@
         apple (atom (create-apple))]
 
     (set-canvas-size canvas)
-    (draw-board canvas)
     (de/listen! (dc/sel "body") :keydown (fn [e] (key-pressed e snake)))
-    (reset-game snake apple)
+    (prepare-game snake apple)
     (iterate-game snake apple)
     (js/setInterval (fn []
                       (iterate-game snake apple)) turn-millis)))
