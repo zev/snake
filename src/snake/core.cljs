@@ -5,7 +5,7 @@
 
 (enable-console-print!)
 
-(println "Hello world!")
+;;(println "Hello world!")
 
 (def board  (dm/by-id "board"))
 (def canvas (.getContext board "2d"))
@@ -19,8 +19,7 @@
 (def dirs {:left [-1 0]
            :right [ 1 0]
            :up [0 -1]
-           :down [ 0 1]
-           })
+           :down [ 0 1]})
 
 (defn add-points
   [& pts]
@@ -58,8 +57,17 @@
   [{[head & body] :body}]
   (contains? (set body) head))
 
+(defn out-of-bounds?
+  "Check if the head has hit the borders of the game board"
+  [{[[x y] & body] :body}]
+  (or (< x 0)
+      (< y 0)
+      (> x width)
+      (> y height)))
 
-(def lose? head-overlaps-body?)
+(defn lose?
+  [snake]
+  (some #(% snake) [head-overlaps-body? out-of-bounds?]))
 
 (defn turn
   [snake newdir]
@@ -135,7 +143,6 @@
   [canvas]
   (let [nwidth (* (inc width) point-size)
         nheight (* (inc height) point-size)]
-  (dm/log "New width " nwidth " new height " nheight)
   (set! (.-width canvas) nwidth)
   (set! (.-height canvas) nheight)))
 
@@ -167,7 +174,6 @@
         my-code (if (= 0 key-code) char-code key-code)]
 
   (update-direction snake (dirs (arrow-keys my-code)))))
-
 
 (defn game
   []
