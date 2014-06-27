@@ -1,8 +1,7 @@
 (ns snake.core
   (:require [domina :as dm]
             [domina.events :as de]
-            [domina.css :as dc]
-            ))
+            [domina.css :as dc]))
 
 (enable-console-print!)
 
@@ -10,6 +9,7 @@
 
 (def board  (dm/by-id "board"))
 (def canvas (.getContext board "2d"))
+(def board-color "rgb(220,220,220)")
 
 (def width 75)
 (def height 50)
@@ -115,7 +115,7 @@
 (defn draw-board
   ([g]
      ;;fill screen
-     (aset g "fillStyle" "rgb(220,220,220)")
+     (aset g "fillStyle" board-color)
      (.fillRect g 0 0 (.-width g) (.-height g))
      ;; (.save g)
      )
@@ -127,7 +127,7 @@
   [g snake apple changes]
   ;; (draw-board g)
   (doseq [point changes]
-    (fill-point g point "rgb(220,220,220)"))
+    (fill-point g point board-color))
   (paint g @snake changes)
   (paint g @apple))
 
